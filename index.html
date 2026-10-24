@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>幻境紀行 | Phantasia Quest</title>
+  <meta name="description" content="文字 RPG 冒險遊戲 — 打怪升級、轉職、收集裝備">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- ========== 登入 / 註冊畫面 ========== -->
+  <div id="screen-auth" class="screen active">
+    <div class="auth-box">
+      <div class="logo">幻境紀行</div>
+      <div class="subtitle">文字 RPG · 打怪 · 轉職 · 裝備</div>
+
+      <div class="form-group">
+        <label>角色名稱</label>
+        <input type="text" id="reg-name" maxlength="12" placeholder="輸入你的名字" autocomplete="off">
+      </div>
+      <div class="form-group">
+        <label>選擇職業</label>
+        <select id="reg-job">
+          <option value="warrior">戰士 — 高力量與體質</option>
+          <option value="mage">法師 — 高智力，強力魔法</option>
+          <option value="ranger">遊俠 — 高敏捷，精準射擊</option>
+        </select>
+      </div>
+
+      <div class="auth-actions">
+        <button id="btn-register" class="btn btn-block">開始冒險</button>
+        <button id="btn-load" class="btn btn-block" style="background:#3a3a55">讀取存檔</button>
+      </div>
+
+      <p class="hint">
+        目前為本地存檔版本（資料存在瀏覽器）。<br>
+        之後可接上 Supabase 實現真正的帳號系統與跨裝置存檔。
+      </p>
+    </div>
+  </div>
+
+  <!-- ========== 遊戲主畫面 ========== -->
+  <div id="screen-game" class="screen">
+    <div class="game-header">
+      <h1>幻境紀行</h1>
+      <div>
+        <button id="btn-logout" class="btn btn-sm" style="background:#3a3a55">返回標題</button>
+        <button id="btn-delete-save" class="btn btn-sm btn-danger">刪除存檔</button>
+      </div>
+    </div>
+
+    <div class="main-grid">
+      <!-- 左側：角色資訊 -->
+      <div class="left-col">
+        <div class="panel">
+          <h3>角色狀態</h3>
+          <div class="stat-row"><span class="stat-label">名稱</span><span id="p-name">-</span></div>
+          <div class="stat-row"><span class="stat-label">職業</span><span id="p-job">-</span></div>
+          <div class="stat-row"><span class="stat-label">等級</span><span id="p-level">1</span></div>
+          <div class="stat-row"><span class="stat-label">經驗</span><span id="p-exp">0 / 50</span></div>
+          <div class="stat-row"><span class="stat-label">金幣</span><span class="gold" id="p-gold">0</span></div>
+
+          <div style="margin-top:12px">
+            <div class="stat-row"><span class="stat-label">HP</span><span id="p-hp">0 / 0</span></div>
+            <div class="bar-wrap"><div id="hp-bar" class="bar-fill" style="width:100%"></div></div>
+            <div class="stat-row"><span class="stat-label">MP</span><span id="p-mp">0 / 0</span></div>
+            <div class="bar-wrap"><div id="mp-bar" class="bar-fill" style="width:100%"></div></div>
+          </div>
+
+          <div style="margin-top:10px; display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:0.9rem">
+            <div>力量 <strong id="p-str">0</strong></div>
+            <div>智力 <strong id="p-int">0</strong></div>
+            <div>敏捷 <strong id="p-agi">0</strong></div>
+            <div>體質 <strong id="p-vit">0</strong></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>裝備</h3>
+          <div id="eq-list"></div>
+        </div>
+      </div>
+
+      <!-- 中間：地圖與戰鬥 -->
+      <div class="center-col">
+        <div class="panel">
+          <h3>目前位置：<span id="map-name">新手村</span></h3>
+          <p id="map-desc">安全的起始之地。</p>
+          <div id="map-nav"></div>
+
+          <div style="margin-top:12px; display:flex; flex-wrap:wrap; gap:8px">
+            <button id="btn-heal" class="btn" style="display:none">💊 治療所</button>
+            <button id="btn-shop-toggle" class="btn" style="display:none; background:#3a3a55">🛒 商店</button>
+            <button id="btn-job" class="btn" style="display:none; background:#5b21b6">✨ 轉職</button>
+          </div>
+
+          <!-- 商店面板 -->
+          <div id="panel-shop" class="panel" style="display:none; margin-top:12px; background:var(--panel2)">
+            <h3>商店</h3>
+            <ul id="shop-list"></ul>
+          </div>
+
+          <!-- 轉職面板 -->
+          <div id="panel-job" class="panel" style="display:none; margin-top:12px; background:var(--panel2)">
+            <h3>轉職</h3>
+            <div id="job-list"></div>
+          </div>
+
+          <!-- 戰鬥區 -->
+          <div id="fight-area" style="display:none; margin-top:16px">
+            <h3 style="font-size:0.95rem; color:var(--muted); margin-bottom:6px">可能出現的怪物</h3>
+            <p id="monster-list" style="margin-bottom:12px"></p>
+            <button id="btn-fight" class="btn">⚔️ 開始戰鬥</button>
+            <p style="font-size:0.8rem; color:var(--muted); margin-top:8px">戰鬥後需等待 15 秒才能再次戰鬥</p>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>冒險日誌</h3>
+          <div id="log-box"></div>
+        </div>
+      </div>
+
+      <!-- 右側：背包 -->
+      <div class="right-col">
+        <div class="panel">
+          <h3>背包</h3>
+          <ul id="inv-list"></ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 戰鬥結果彈窗 -->
+  <div id="battle-modal" class="modal">
+    <div class="modal-content">
+      <h3>戰鬥結果</h3>
+      <div id="battle-log"></div>
+      <button id="btn-close-battle" class="btn btn-block">關閉</button>
+    </div>
+  </div>
+
+  <script src="js/data.js"></script>
+  <script src="js/game.js"></script>
+  <script src="js/ui.js"></script>
+</body>
+</html>
